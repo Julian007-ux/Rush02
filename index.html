@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RUSH02 — 42 Study Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,700;0,800;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080a0f;
+  --bg2: #0d0f16;
+  --bg3: #12151f;
+  --border: #1a1f2e;
+  --border2: #252c40;
+  --green: #4ade80;
+  --green2: #22c55e;
+  --cyan: #22d3ee;
+  --cyan2: #06b6d4;
+  --yellow: #fbbf24;
+  --red: #f87171;
+  --purple: #a78bfa;
+  --orange: #fb923c;
+  --dim: #94a3b8;
+  --muted: #475569;
+  --text: #e2e8f0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;min-height:100vh;overflow-x:hidden}
+
+/* SCANLINE OVERLAY */
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:9999}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(8,10,15,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:0;height:52px}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--green);margin-right:32px;letter-spacing:-0.5px}
+.nav-logo span{color:var(--dim)}
+.nav-tabs{display:flex;gap:2px;flex:1;overflow-x:auto}
+.nav-tab{padding:6px 14px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;border:none;background:none;color:var(--muted);transition:all .15s;white-space:nowrap;text-transform:uppercase}
+.nav-tab:hover{color:var(--text);background:var(--bg3)}
+.nav-tab.active{color:var(--green);background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.15)}
+
+/* SECTIONS */
+.section{display:none;padding:32px 24px;max-width:960px;margin:0 auto;animation:fadeUp .3s ease}
+.section.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* TYPOGRAPHY */
+h1{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:-1px;margin-bottom:6px}
+h2{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px}
+
+/* CARDS */
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px}
+.card-accent{border-left:3px solid var(--green)}
+.pill{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.8px;padding:3px 8px;border-radius:4px;text-transform:uppercase;margin-bottom:8px}
+
+/* ═══════════════════════════════════════════════
+   SECTION 1 — CONVERTER
+═══════════════════════════════════════════════ */
+.converter-input-wrap{position:relative;margin-bottom:24px}
+.converter-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:22px;color:var(--yellow);outline:none;transition:border-color .2s}
+.converter-input:focus{border-color:var(--cyan)}
+.converter-input::placeholder{color:var(--muted);font-size:16px}
+.btn{padding:10px 20px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;border:none;transition:all .15s;text-transform:uppercase}
+.btn-green{background:var(--green);color:#000}
+.btn-green:hover{background:var(--green2)}
+.btn-cyan{background:rgba(34,211,238,.1);color:var(--cyan);border:1px solid rgba(34,211,238,.2)}
+.btn-cyan:hover{background:rgba(34,211,238,.2)}
+.btn-red{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+
+.output-box{background:#04060a;border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:24px;min-height:60px}
+.output-number{font-size:20px;color:var(--green);line-height:1.6}
+.output-number .word{display:inline-block;animation:wordPop .3s ease both;cursor:help;border-radius:3px;padding:1px 3px;transition:background .15s}
+.output-number .word:hover{background:rgba(74,222,128,.15)}
+.output-number .word-space{opacity:0;animation:wordPop .3s ease both}
+@keyframes wordPop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+/* TRACE */
+.trace-container{display:flex;flex-direction:column;gap:6px}
+.trace-step{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;cursor:pointer;transition:border-color .2s}
+.trace-step:hover{border-color:var(--border2)}
+.trace-step.active-step{border-color:var(--cyan)}
+.trace-header{display:flex;align-items:center;gap:10px;padding:10px 14px}
+.trace-depth{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0}
+.trace-fn{font-size:12px;color:var(--cyan);font-weight:700}
+.trace-arg{font-size:11px;color:var(--yellow);margin-left:4px}
+.trace-result{font-size:11px;color:var(--green);margin-left:auto}
+.trace-body{padding:0 14px 12px 44px;font-size:11px;color:var(--dim);display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:0}
+.trace-step.open .trace-body{display:block}
+.trace-body .line{padding:2px 0;display:flex;gap:8px}
+.trace-body .line .label{color:var(--muted);width:80px;flex-shrink:0}
+.trace-body .line .val{color:var(--text)}
+
+/* ═══════════════════════════════════════════════
+   SECTION 2 — BIGNUM DEMO
+═══════════════════════════════════════════════ */
+.bignum-demo{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.op-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.op-input{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.mini-input{background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--yellow);outline:none;width:130px}
+.mini-input:focus{border-color:var(--cyan)}
+.op-label{font-size:18px;color:var(--muted);align-self:center}
+.op-result{background:#04060a;border:1px solid var(--border);border-radius:4px;padding:10px;font-size:13px;color:var(--green);min-height:40px}
+.op-explain{font-size:10px;color:var(--dim);margin-top:8px;line-height:1.6}
+
+.slice-visual{background:#04060a;border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;overflow-x:auto}
+.slice-chars{display:flex;gap:4px;margin:12px 0;flex-wrap:wrap}
+.slice-char{width:32px;height:36px;border-radius:4px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;transition:all .3s;flex-shrink:0}
+.slice-char.keep{background:rgba(74,222,128,.15);border-color:var(--green);color:var(--green)}
+.slice-char.drop{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.3);color:var(--red);opacity:.5}
+.slice-char.remainder{background:rgba(34,211,238,.15);border-color:var(--cyan);color:var(--cyan)}
+.slice-legend{display:flex;gap:16px;font-size:10px;color:var(--dim)}
+.legend-dot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px}
+
+/* ═══════════════════════════════════════════════
+   SECTION 3 — TIMELINE
+═══════════════════════════════════════════════ */
+.timeline{position:relative;padding-left:32px}
+.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,var(--green),var(--purple),var(--cyan))}
+.tl-item{position:relative;margin-bottom:24px;animation:fadeUp .4s ease both}
+.tl-dot{position:absolute;left:-26px;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center}
+.tl-dot::after{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.tl-file{font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
+.tl-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.tl-card h3{color:inherit;font-size:13px;margin-bottom:8px}
+.tl-desc{font-size:12px;color:var(--dim);line-height:1.7;margin-bottom:8px}
+.code-snippet{background:#04060a;border:1px solid var(--border);border-radius:4px;padding:10px 12px;font-size:11px;margin-top:8px;overflow-x:auto;white-space:pre;line-height:1.7}
+.kw{color:var(--purple)}
+.fn{color:var(--cyan)}
+.str{color:var(--yellow)}
+.cmt{color:var(--muted)}
+.num-col{color:var(--orange)}
+
+/* ═══════════════════════════════════════════════
+   SECTION 4 — QUIZ
+═══════════════════════════════════════════════ */
+.quiz-progress{display:flex;gap:4px;margin-bottom:24px}
+.qp-dot{height:4px;flex:1;border-radius:2px;background:var(--border);transition:background .3s}
+.qp-dot.done{background:var(--green)}
+.qp-dot.current{background:var(--cyan)}
+
+.quiz-card{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px;margin-bottom:16px}
+.quiz-q{font-size:15px;color:var(--text);margin-bottom:20px;line-height:1.6}
+.quiz-q code{background:var(--bg);color:var(--cyan);padding:1px 6px;border-radius:3px;font-size:13px}
+.quiz-options{display:flex;flex-direction:column;gap:8px}
+.quiz-opt{background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:12px 16px;cursor:pointer;font-size:12px;color:var(--dim);transition:all .15s;text-align:left;font-family:'JetBrains Mono',monospace}
+.quiz-opt:hover:not(:disabled){border-color:var(--cyan);color:var(--text);background:rgba(34,211,238,.05)}
+.quiz-opt.correct{border-color:var(--green);background:rgba(74,222,128,.1);color:var(--green)}
+.quiz-opt.wrong{border-color:var(--red);background:rgba(248,113,113,.1);color:var(--red)}
+.quiz-opt:disabled{cursor:default}
+.quiz-explain{background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:6px;padding:12px 16px;font-size:11px;color:var(--dim);margin-top:12px;line-height:1.7;display:none}
+.quiz-explain.show{display:block}
+.quiz-explain strong{color:var(--green)}
+
+.quiz-score{text-align:center;padding:40px}
+.score-num{font-family:'Syne',sans-serif;font-size:72px;font-weight:800;line-height:1}
+.score-label{color:var(--dim);font-size:13px;margin-top:8px}
+
+/* ═══════════════════════════════════════════════
+   SECTION 5 — DICT SIMULATOR
+═══════════════════════════════════════════════ */
+.dict-grid{display:grid;grid-template-columns:200px 1fr;gap:20px}
+.dict-entries{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:480px;overflow-y:auto}
+.dict-entry{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-bottom:1px solid var(--border);font-size:11px;transition:all .2s}
+.dict-entry:last-child{border-bottom:none}
+.dict-entry.disabled{opacity:.3;text-decoration:line-through}
+.dict-entry .nbr{color:var(--yellow);width:60px;flex-shrink:0}
+.dict-entry .name{color:var(--green);flex:1}
+.dict-toggle{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:2px 4px;border-radius:3px;transition:all .15s}
+.dict-toggle:hover{color:var(--red)}
+.dict-entry.disabled .dict-toggle{color:var(--green2)}
+.dict-result-panel{display:flex;flex-direction:column;gap:12px}
+.dict-test-input{display:flex;gap:10px;margin-bottom:8px}
+.dict-output{background:#04060a;border:1px solid var(--border);border-radius:8px;padding:16px;font-size:14px;min-height:52px}
+.dict-output.ok{color:var(--green);border-color:rgba(74,222,128,.2)}
+.dict-output.error{color:var(--red);border-color:rgba(248,113,113,.2)}
+.missing-chain{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.missing-item{font-size:10px;padding:4px 8px;border-radius:3px;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.15);color:var(--red)}
+
+/* ═══════════════════════════════════════════════
+   SECTION 6 — FLASH CARDS
+═══════════════════════════════════════════════ */
+.flashcard-wrap{perspective:1000px;margin-bottom:24px}
+.flashcard{position:relative;width:100%;height:200px;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1);cursor:pointer}
+.flashcard.flipped{transform:rotateY(180deg)}
+.card-face{position:absolute;inset:0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;backface-visibility:hidden;text-align:center}
+.card-front{background:var(--bg2);border:2px solid var(--border2)}
+.card-back{background:linear-gradient(135deg,rgba(74,222,128,.05),rgba(34,211,238,.05));border:2px solid rgba(74,222,128,.2);transform:rotateY(180deg)}
+.card-front .q{font-size:16px;color:var(--text);line-height:1.5}
+.card-front .hint{font-size:10px;color:var(--muted);margin-top:12px;text-transform:uppercase;letter-spacing:1px}
+.card-back .a{font-size:13px;color:var(--green);line-height:1.7}
+.flash-nav{display:flex;align-items:center;justify-content:center;gap:16px}
+.flash-counter{font-size:12px;color:var(--dim)}
+
+/* MISC */
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.tag{font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 6px;border-radius:3px;text-transform:uppercase}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+@media(max-width:600px){
+  .bignum-demo{grid-template-columns:1fr}
+  .dict-grid{grid-template-columns:1fr}
+  .dict-entries{max-height:200px}
+  h1{font-size:20px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">RUSH<span>02</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showSection('converter')">⚡ Converter</button>
+    <button class="nav-tab" onclick="showSection('bignum')">🔢 BigNum</button>
+    <button class="nav-tab" onclick="showSection('timeline')">📋 Timeline</button>
+    <button class="nav-tab" onclick="showSection('dict')">📖 Dict Sim</button>
+    <button class="nav-tab" onclick="showSection('quiz')">🎯 Quiz</button>
+    <button class="nav-tab" onclick="showSection('flash')">⚡ Flash Cards</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════ CONVERTER ═══════════════════════════════ -->
+<div id="sec-converter" class="section active">
+  <h1 style="color:var(--green)">⚡ Número → Inglês</h1>
+  <p style="color:var(--dim);font-size:12px;margin-bottom:24px">Introduz qualquer número (até undecillion) e vê cada passo da recursão</p>
+
+  <div class="converter-input-wrap">
+    <input class="converter-input" id="conv-input" type="text" placeholder="Ex: 12345  ou  1000000000000000000000000000000000000"
+      oninput="onConvInput()" onkeydown="if(e.key==='Enter')doConvert()">
+  </div>
+  <div class="row">
+    <button class="btn btn-green" onclick="doConvert()">CONVERTER</button>
+    <button class="btn btn-cyan" onclick="setRandom()">ALEATÓRIO</button>
+    <button class="btn btn-cyan" onclick="setInput('0')">ZERO</button>
+    <button class="btn btn-cyan" onclick="setInput('1000000000000000000000000000000000000')">UNDECILLION</button>
+    <button class="btn btn-red" onclick="clearConv()">LIMPAR</button>
+  </div>
+
+  <div id="conv-output-wrap" style="display:none">
+    <div style="margin-bottom:8px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Output</div>
+    <div class="output-box" id="conv-output"></div>
+
+    <h2>Call Stack — clica em cada passo para expandir</h2>
+    <div class="trace-container" id="conv-trace"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ BIGNUM ═══════════════════════════════ -->
+<div id="sec-bignum" class="section">
+  <h1 style="color:var(--purple)">🔢 BigNum — String Slicing</h1>
+  <p style="color:var(--dim);font-size:12px;margin-bottom:24px">Divisores ≥ 100 são potências de 10. Dividir e fazer módulo = cortar a string.</p>
+
+  <h2>Visualizador de Corte</h2>
+  <div class="slice-visual">
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <input class="mini-input" id="slice-num" value="12345" oninput="updateSlice()" style="width:150px">
+      <span class="op-label">÷ ou %</span>
+      <input class="mini-input" id="slice-div" value="1000" oninput="updateSlice()" style="width:100px">
+    </div>
+    <div id="slice-chars-div" class="slice-chars"></div>
+    <div id="slice-chars-mod" class="slice-chars"></div>
+    <div style="margin-top:12px;font-size:11px;color:var(--dim)">
+      <div id="slice-explain-div"></div>
+      <div id="slice-explain-mod"></div>
+    </div>
+    <div class="slice-legend" style="margin-top:12px">
+      <div><span class="legend-dot" style="background:rgba(74,222,128,.3)"></span><span style="color:var(--green)">Quociente (÷)</span></div>
+      <div><span class="legend-dot" style="background:rgba(34,211,238,.3)"></span><span style="color:var(--cyan)">Resto (%)</span></div>
+      <div><span class="legend-dot" style="background:rgba(248,113,113,.2)"></span><span style="color:var(--red)">Descartado</span></div>
+    </div>
+  </div>
+
+  <h2>Calculadora BigNum</h2>
+  <div class="bignum-demo">
+    <div class="op-card">
+      <div class="pill" style="background:rgba(74,222,128,.1);color:var(--green)">bn_div</div>
+      <div class="op-input">
+        <input class="mini-input" id="div-a" value="12345" oninput="calcBn()">
+        <span class="op-label">÷</span>
+        <input class="mini-input" id="div-b" value="1000" oninput="calcBn()">
+      </div>
+      <div class="op-result" id="div-result"></div>
+      <div class="op-explain" id="div-explain"></div>
+    </div>
+    <div class="op-card">
+      <div class="pill" style="background:rgba(34,211,238,.1);color:var(--cyan)">bn_mod</div>
+      <div class="op-input">
+        <input class="mini-input" id="mod-a" value="12345" oninput="calcBn()">
+        <span class="op-label">%</span>
+        <input class="mini-input" id="mod-b" value="1000" oninput="calcBn()">
+      </div>
+      <div class="op-result" id="mod-result"></div>
+      <div class="op-explain" id="mod-explain"></div>
+    </div>
+  </div>
+
+  <h2>Regras de Classificação</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px" class="rules-grid">
+    <div class="card" style="border-left:3px solid var(--green)">
+      <div class="pill" style="background:rgba(74,222,128,.1);color:var(--green)">is_pow10_large</div>
+      <div style="font-size:11px;color:var(--dim);line-height:1.8">
+        nbr[0] == '1'<br>strlen &gt;= 3<br>resto tudo '0'<br><br>
+        <span style="color:var(--green)">✓ 100, 1000, 10^6...</span><br>
+        <span style="color:var(--red)">✗ 1, 10, 20, 4</span>
+      </div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--cyan)">
+      <div class="pill" style="background:rgba(34,211,238,.1);color:var(--cyan)">is_tens</div>
+      <div style="font-size:11px;color:var(--dim);line-height:1.8">
+        strlen == 2<br>nbr[0] &gt;= '2'<br>nbr[1] == '0'<br><br>
+        <span style="color:var(--green)">✓ 20,30,40...90</span><br>
+        <span style="color:var(--red)">✗ 10, 100, 5</span>
+      </div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--purple)">
+      <div class="pill" style="background:rgba(167,139,250,.1);color:var(--purple)">is_primitive</div>
+      <div style="font-size:11px;color:var(--dim);line-height:1.8">
+        Dígitos 0-9<br>Teens 10-19<br>Tens 20-90<br>Pot. de 10 &gt;= 100<br><br>
+        <span style="color:var(--red)">✗ 42, 54, 999</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ TIMELINE ═══════════════════════════════ -->
+<div id="sec-timeline" class="section">
+  <h1 style="color:var(--cyan)">📋 Timeline — Fluxo Completo</h1>
+  <p style="color:var(--dim);font-size:12px;margin-bottom:24px">De <code style="color:var(--yellow)">./rush02 12345</code> ao output — cada função no seu contexto</p>
+
+  <div class="timeline" id="timeline-content"></div>
+</div>
+
+<!-- ═══════════════════════════════ DICT SIM ═══════════════════════════════ -->
+<div id="sec-dict" class="section">
+  <h1 style="color:var(--yellow)">📖 Simulador de Dicionário</h1>
+  <p style="color:var(--dim);font-size:12px;margin-bottom:24px">Remove entradas do dicionário e testa o comportamento. Vê exatamente o que falta para representar um número.</p>
+
+  <div class="dict-grid">
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Dicionário</div>
+      <div class="dict-entries" id="dict-entries"></div>
+      <button class="btn btn-cyan" style="margin-top:8px;width:100%" onclick="resetDict()">RESTAURAR TUDO</button>
+    </div>
+    <div class="dict-result-panel">
+      <div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Testar número</div>
+        <div class="dict-test-input">
+          <input class="mini-input" id="dict-test-input" value="21" style="flex:1" oninput="runDictTest()" onkeydown="">
+          <button class="btn btn-green" onclick="runDictTest()">TESTAR</button>
+        </div>
+        <div class="dict-output" id="dict-output">Insere um número para testar</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Entradas necessárias</div>
+        <div class="missing-chain" id="dict-chain"></div>
+      </div>
+      <div class="card" style="font-size:11px;color:var(--dim);line-height:1.8">
+        <strong style="color:var(--yellow)">Regra:</strong> Se qualquer entrada primitiva necessária estiver em falta →
+        <span style="color:var(--red)">Dict Error\n</span><br>
+        Entradas compostas como <span style="color:var(--purple)">42: forty-two</span> são ignoradas — o programa usa sempre as entradas primitivas.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ QUIZ ═══════════════════════════════ -->
+<div id="sec-quiz" class="section">
+  <h1 style="color:var(--red)">🎯 Quiz — Modo Defesa</h1>
+  <p style="color:var(--dim);font-size:12px;margin-bottom:20px">Simula as perguntas de um avaliador da 42. Responde sem hesitar.</p>
+
+  <div class="quiz-progress" id="quiz-progress"></div>
+  <div id="quiz-content"></div>
+</div>
+
+<!-- ═══════════════════════════════ FLASH CARDS ═══════════════════════════════ -->
+<div id="sec-flash" class="section">
+  <h1 style="color:var(--orange)">⚡ Flash Cards</h1>
+  <p style="color:var(--dim);font-size:12px;margin-bottom:24px">Clica no card para ver a resposta</p>
+
+  <div class="flashcard-wrap" id="flashcard-wrap">
+    <div class="flashcard" id="flashcard" onclick="flipCard()">
+      <div class="card-face card-front">
+        <div class="q" id="flash-q"></div>
+        <div class="hint">clica para ver a resposta</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="a" id="flash-a"></div>
+      </div>
+    </div>
+  </div>
+  <div class="flash-nav">
+    <button class="btn btn-cyan" onclick="prevCard()">← ANTERIOR</button>
+    <div class="flash-counter" id="flash-counter"></div>
+    <button class="btn btn-cyan" onclick="nextCard()">PRÓXIMO →</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  event.target.classList.add('active');
+  if (id === 'bignum') { calcBn(); updateSlice(); }
+  if (id === 'timeline') buildTimeline();
+  if (id === 'dict') buildDict();
+  if (id === 'quiz') initQuiz();
+  if (id === 'flash') initFlash();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DICT DATA
+// ═══════════════════════════════════════════════════════════════
+const DICT = [
+  [0,'zero'],[1,'one'],[2,'two'],[3,'three'],[4,'four'],
+  [5,'five'],[6,'six'],[7,'seven'],[8,'eight'],[9,'nine'],
+  [10,'ten'],[11,'eleven'],[12,'twelve'],[13,'thirteen'],[14,'fourteen'],
+  [15,'fifteen'],[16,'sixteen'],[17,'seventeen'],[18,'eighteen'],[19,'nineteen'],
+  [20,'twenty'],[30,'thirty'],[40,'forty'],[50,'fifty'],
+  [60,'sixty'],[70,'seventy'],[80,'eighty'],[90,'ninety'],
+  [100,'hundred'],[1000,'thousand'],
+  ['1000000','million'],['1000000000','billion'],
+  ['1000000000000','trillion'],['1000000000000000','quadrillion'],
+  ['1000000000000000000','quintillion'],
+  ['1000000000000000000000','sextillion'],
+  ['1000000000000000000000000','septillion'],
+  ['1000000000000000000000000000','octillion'],
+  ['1000000000000000000000000000000','nonillion'],
+  ['1000000000000000000000000000000000','decillion'],
+  ['1000000000000000000000000000000000000','undecillion'],
+];
+
+let disabledEntries = new Set();
+
+// ═══════════════════════════════════════════════════════════════
+//  BIGNUM JS implementations
+// ═══════════════════════════════════════════════════════════════
+function bnCmp(a, b) {
+  a = String(a); b = String(b);
+  if (a.length !== b.length) return a.length > b.length ? 1 : -1;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] > b[i]) return 1;
+    if (a[i] < b[i]) return -1;
+  }
+  return 0;
+}
+
+function bnIsZero(a) { return /^0+$/.test(a); }
+
+function bnDiv(num, divisor) {
+  num = String(num); divisor = String(divisor);
+  const zeros = divisor.length - 1;
+  const rlen = num.length - zeros;
+  if (rlen <= 0) return '0';
+  let result = num.substring(0, rlen).replace(/^0+/, '') || '0';
+  return result;
+}
+
+function bnMod(num, divisor) {
+  num = String(num); divisor = String(divisor);
+  if (bnCmp(num, divisor) === 0) return '0';
+  const zeros = divisor.length - 1;
+  if (zeros >= num.length) return num;
+  let result = num.substring(num.length - zeros).replace(/^0+/, '') || '0';
+  return result;
+}
+
+function isPow10Large(nbr) {
+  nbr = String(nbr);
+  if (nbr[0] !== '1' || nbr.length < 3) return false;
+  return /^10+$/.test(nbr);
+}
+
+function isTens(nbr) {
+  nbr = String(nbr);
+  return nbr.length === 2 && nbr[0] >= '2' && nbr[1] === '0';
+}
+
+function isPrimitive(nbr) {
+  nbr = String(nbr);
+  if (nbr.length === 1) return true;
+  if (nbr.length === 2 && nbr[0] === '1') return true;
+  if (isTens(nbr)) return true;
+  if (isPow10Large(nbr)) return true;
+  return false;
+}
+
+function getActiveDict() {
+  return DICT.filter((_, i) => !disabledEntries.has(i))
+    .map(e => [String(e[0]), e[1]]);
+}
+
+function getClassIndex(n, dict) {
+  n = String(n);
+  let best = -1, exact = -1;
+  for (let i = 0; i < dict.length; i++) {
+    const nbr = dict[i][0];
+    if (isPrimitive(nbr) && bnCmp(n, nbr) === 0) exact = i;
+    if (bnCmp(n, '100') >= 0 && isPow10Large(nbr)) {
+      if (bnCmp(n, nbr) >= 0) best = i;
+    } else if (bnCmp(n, '100') < 0 && isTens(nbr)) {
+      if (bnCmp(n, nbr) >= 0) best = i;
+    }
+  }
+  return exact >= 0 ? exact : best;
+}
+
+function canPrint(n, dict) {
+  n = String(n);
+  if (bnIsZero(n)) return true;
+  const idx = getClassIndex(n, dict);
+  if (idx < 0) return false;
+  const cls = dict[idx][0];
+  if (bnCmp(cls, '100') >= 0) {
+    if (!canPrint(bnDiv(n, cls), dict)) return false;
+  }
+  const rem = bnMod(n, cls);
+  if (!bnIsZero(rem)) return canPrint(rem, dict);
+  return true;
+}
+
+// full number converter with trace
+function convertToEnglish(n, dict) {
+  const steps = [];
+  let output = '';
+
+  function rec(n, depth) {
+    n = String(n);
+    if (bnIsZero(n)) return '';
+    const idx = getClassIndex(n, dict);
+    if (idx < 0) return '[MISSING]';
+    const cls = dict[idx][0];
+    const name = dict[idx][1];
+    const step = { n, cls, name, depth, quot:'', rem:'', parts:[] };
+    let result = '';
+
+    if (bnCmp(cls, '100') >= 0) {
+      const quot = bnDiv(n, cls);
+      step.quot = quot;
+      const prefix = rec(quot, depth + 1);
+      if (prefix) result += prefix + ' ';
+    }
+    result += name;
+    const rem = bnMod(n, cls);
+    step.rem = rem;
+    if (!bnIsZero(rem)) {
+      const suffix = rec(rem, depth + 1);
+      if (suffix) result += ' ' + suffix;
+    }
+    step.result = result;
+    steps.push(step);
+    return result;
+  }
+
+  if (bnIsZero(n)) {
+    const zero = dict.find(d => d[0] === '0');
+    return { output: zero ? zero[1] : '[MISSING]', steps: [] };
+  }
+  output = rec(n, 0);
+  return { output, steps };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONVERTER SECTION
+// ═══════════════════════════════════════════════════════════════
+const EXAMPLES = ['42','100','999','12345','1000000','999999999','1000000000000000000000000000000000000','314159265358979'];
+
+function setInput(v) {
+  document.getElementById('conv-input').value = v;
+  doConvert();
+}
+
+function setRandom() {
+  setInput(EXAMPLES[Math.floor(Math.random()*EXAMPLES.length)]);
+}
+
+function clearConv() {
+  document.getElementById('conv-input').value = '';
+  document.getElementById('conv-output-wrap').style.display = 'none';
+}
+
+function onConvInput() {}
+
+function doConvert() {
+  const raw = document.getElementById('conv-input').value.trim();
+  if (!raw || !/^\d+$/.test(raw)) return;
+  const num = raw.replace(/^0+/, '') || '0';
+  const dict = getActiveDict();
+
+  const wrap = document.getElementById('conv-output-wrap');
+  wrap.style.display = 'block';
+
+  if (!canPrint(num, dict)) {
+    document.getElementById('conv-output').innerHTML = '<span style="color:var(--red)">Dict Error</span>';
+    document.getElementById('conv-trace').innerHTML = '<div style="color:var(--red);font-size:12px;padding:12px">Uma ou mais entradas primitivas necessárias não estão no dicionário.</div>';
+    return;
+  }
+
+  const { output, steps } = convertToEnglish(num, dict);
+
+  // animated output
+  const outEl = document.getElementById('conv-output');
+  const words = output.split(' ');
+  outEl.innerHTML = words.map((w, i) =>
+    `<span class="word" style="animation-delay:${i*0.06}s" title="${getWordHint(w, dict)}">${w}</span>` +
+    (i < words.length-1 ? '<span class="word-space" style="animation-delay:' + (i*0.06+0.03) + 's"> </span>' : '')
+  ).join('');
+
+  // build trace (reverse so first call is on top)
+  const sorted = [...steps].reverse();
+  const traceEl = document.getElementById('conv-trace');
+  const depthColors = ['var(--green)','var(--cyan)','var(--yellow)','var(--purple)','var(--orange)','var(--red)'];
+  traceEl.innerHTML = sorted.map((s, i) => {
+    const col = depthColors[s.depth % depthColors.length];
+    const bg = `rgba(${hexToRgb(col)},.15)`;
+    const isLarge = bnCmp(s.cls, '100') >= 0;
+    return `
+    <div class="trace-step" id="ts-${i}" onclick="toggleTrace(${i})">
+      <div class="trace-header">
+        <div class="trace-depth" style="background:${bg};color:${col}">D${s.depth}</div>
+        <span class="trace-fn">ft_print</span>
+        <span class="trace-arg">("${s.n}")</span>
+        <span class="trace-result" style="color:${col}">→ "${s.result}"</span>
+      </div>
+      <div class="trace-body">
+        <div class="line"><span class="label">classe:</span><span class="val" style="color:${col}">${s.cls}: ${s.name}</span></div>
+        ${isLarge ? `<div class="line"><span class="label">bn_div:</span><span class="val" style="color:var(--yellow)">"${s.n}" ÷ "${s.cls}" = "${s.quot}"</span></div>` : ''}
+        <div class="line"><span class="label">bn_mod:</span><span class="val" style="color:var(--cyan)">"${s.n}" % "${s.cls}" = "${s.rem}"</span></div>
+        <div class="line"><span class="label">imprime:</span><span class="val" style="color:var(--green)">"${s.name}"</span></div>
+        ${bnIsZero(s.rem) ? '' : `<div class="line"><span class="label">resto:</span><span class="val">ft_print("${s.rem}") →</span></div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getWordHint(word, dict) {
+  const entry = dict.find(d => d[1] === word);
+  return entry ? `${entry[1]} = ${entry[0]}` : word;
+}
+
+function toggleTrace(i) {
+  const el = document.getElementById('ts-' + i);
+  el.classList.toggle('open');
+  el.classList.toggle('active-step', el.classList.contains('open'));
+}
+
+function hexToRgb(hex) {
+  if (hex.startsWith('var(--')) {
+    const map = {'var(--green)':'74,222,128','var(--cyan)':'34,211,238','var(--yellow)':'251,191,36','var(--purple)':'167,139,250','var(--orange)':'251,146,60','var(--red)':'248,113,113'};
+    return map[hex] || '255,255,255';
+  }
+  return '255,255,255';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BIGNUM SECTION
+// ═══════════════════════════════════════════════════════════════
+function calcBn() {
+  const a = document.getElementById('div-a').value.trim();
+  const b = document.getElementById('div-b').value.trim();
+  const ma = document.getElementById('mod-a').value.trim();
+  const mb = document.getElementById('mod-b').value.trim();
+  if (/^\d+$/.test(a) && /^\d+$/.test(b)) {
+    const r = bnDiv(a, b);
+    document.getElementById('div-result').textContent = r;
+    const z = b.length - 1;
+    const rlen = a.length - z;
+    document.getElementById('div-explain').innerHTML =
+      `k = strlen("${b}") - 1 = <b style="color:var(--yellow)">${z}</b>  ·  ` +
+      `rlen = ${a.length} - ${z} = <b style="color:var(--yellow)">${rlen}</b>  ·  ` +
+      `primeiros ${Math.max(0,rlen)} chars de "${a}"`;
+  }
+  if (/^\d+$/.test(ma) && /^\d+$/.test(mb)) {
+    const r = bnMod(ma, mb);
+    document.getElementById('mod-result').textContent = r;
+    if (bnCmp(ma,mb)===0) {
+      document.getElementById('mod-explain').innerHTML = `num == divisor → <b style="color:var(--green)">caso especial</b> → retorna "0"`;
+    } else {
+      const z = mb.length - 1;
+      document.getElementById('mod-explain').innerHTML =
+        `k = strlen("${mb}") - 1 = <b style="color:var(--yellow)">${z}</b>  ·  ` +
+        `últimos ${z} chars de "${ma}"`;
+    }
+  }
+  updateSlice();
+}
+
+function updateSlice() {
+  const num = document.getElementById('slice-num').value.trim();
+  const div = document.getElementById('slice-div').value.trim();
+  if (!num || !div || !/^\d+$/.test(num) || !/^\d+$/.test(div)) return;
+
+  const zeros = div.length - 1;
+  const rlen = num.length - zeros;
+
+  // DIV visual
+  const divChars = document.getElementById('slice-chars-div');
+  divChars.innerHTML = num.split('').map((ch, i) =>
+    `<div class="slice-char ${i < rlen ? 'keep' : 'drop'}">${ch}</div>`
+  ).join('');
+  const divResult = bnDiv(num, div);
+  document.getElementById('slice-explain-div').innerHTML =
+    `<b style="color:var(--green)">÷ ${div}</b>  =  "<b style="color:var(--green)">${divResult}</b>"  (primeiros ${Math.max(0,rlen)} chars)`;
+
+  // MOD visual
+  const modChars = document.getElementById('slice-chars-mod');
+  modChars.innerHTML = num.split('').map((ch, i) =>
+    `<div class="slice-char ${i >= rlen ? 'remainder' : 'drop'}">${ch}</div>`
+  ).join('');
+  const modResult = bnMod(num, div);
+  document.getElementById('slice-explain-mod').innerHTML =
+    `<b style="color:var(--cyan)">% ${div}</b>  =  "<b style="color:var(--cyan)">${modResult}</b>"  (últimos ${zeros} chars)`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TIMELINE SECTION
+// ═══════════════════════════════════════════════════════════════
+const TIMELINE_DATA = [
+  {
+    color:'var(--yellow)', file:'main.c', fn:'main(int ac, char **av)',
+    title:'Entrada — Validação dos argumentos',
+    desc:'O programa aceita 2 ou 3 argumentos. ac==2: usa "numbers.dict" por defeito. ac==3: av[1]=dicionário, av[2]=número. is_valid_number verifica que av[ac-1] contém apenas dígitos. valid_zero remove zeros à esquerda.',
+    code:`<span class="kw">if</span> (ac < 2 || ac > 3 || !is_valid_number(av[ac - 1]))
+    write(2, <span class="str">"Error"</span>, 5);
+<span class="kw">if</span> (ac < 3)
+    list = create_list(<span class="str">"numbers.dict"</span>);
+<span class="kw">else</span>
+    list = create_list(av[1]);`
+  },
+  {
+    color:'var(--green)', file:'ft_rush.c', fn:'create_list(char *file_name)',
+    title:'Leitura — Construção do array t_list[]',
+    desc:'Abre o ficheiro com open(). Aloca array para 41+1 entradas. Loop com read_entry() lê cada linha. Para se o ficheiro acabar antes de 41 entradas (dict incompleto é aceite). Sentinela list[i].nbr=NULL marca o fim. Fecha com close().',
+    code:`file = <span class="fn">open</span>(file_name, O_RDONLY);
+list = <span class="fn">malloc</span>(<span class="kw">sizeof</span>(t_list) * (DICT_SIZE + 1));
+<span class="kw">while</span> (i < DICT_SIZE && <span class="fn">read_entry</span>(file, list, i))
+    i++;
+list[i].nbr = NULL; <span class="cmt">// sentinela</span>
+<span class="fn">close</span>(file);`
+  },
+  {
+    color:'var(--cyan)', file:'ft_rush.c', fn:'read_entry() + get_nbr() + get_number_name()',
+    title:'Parsing — Leitura byte a byte',
+    desc:'get_nbr: salta \\n iniciais (linhas vazias), acumula dígitos em tmp[]. skip_separator: salta ":" e espaços. get_number_name: acumula chars até \\n. Todos retornam ft_strdup() — string nova em heap. buf[1] porque nunca é tratado como string.',
+    code:`<span class="cmt">// get_nbr — lê o número</span>
+<span class="fn">read</span>(file, buf, 1);
+<span class="kw">while</span> (buf[0] == <span class="str">'\n'</span>) <span class="fn">read</span>(file, buf, 1);
+<span class="kw">while</span> (buf[0] >= <span class="str">'0'</span> && buf[0] <= <span class="str">'9'</span>)
+    tmp[i++] = buf[0], <span class="fn">read</span>(file, buf, 1);`
+  },
+  {
+    color:'var(--purple)', file:'utils02.c', fn:'get_class_index(char *n, t_list *list)',
+    title:'Classificação — Escolha da classe decimal',
+    desc:'Para n≥100: procura a maior is_pow10_large que cabe. Para n<100: tenta exact match primitivo primeiro (0-19, tens exactos). Fallback: maior is_tens que cabe (para 21-99). Retorna -1 se dict incompleto. Entradas compostas (42: forty-two) são ignoradas por is_primitive.',
+    code:`<span class="kw">if</span> (<span class="fn">is_primitive</span>(list[i].nbr) && <span class="fn">bn_cmp</span>(n, list[i].nbr) == 0)
+    exact = i; <span class="cmt">// prioridade máxima</span>
+<span class="kw">if</span> (<span class="fn">bn_cmp</span>(n, <span class="str">"100"</span>) >= 0 && <span class="fn">is_pow10_large</span>(list[i].nbr))
+    <span class="kw">if</span> (<span class="fn">bn_cmp</span>(n, list[i].nbr) >= 0) best = i;
+<span class="kw">else if</span> (<span class="fn">bn_cmp</span>(n, <span class="str">"100"</span>) < 0 && <span class="fn">is_tens</span>(list[i].nbr))
+    <span class="kw">if</span> (<span class="fn">bn_cmp</span>(n, list[i].nbr) >= 0) best = i;`
+  },
+  {
+    color:'var(--orange)', file:'main.c', fn:'ft_can_print(char *n, t_list *list)',
+    title:'Validação prévia — Dry run sem output',
+    desc:'Antes de imprimir, ft_can_print percorre recursivamente o número inteiro. Se qualquer entrada primitiva necessária estiver em falta, retorna 0. Só se tudo passar é que ft_print é chamado. Garante "Dict Error\\n" limpo sem output parcial.',
+    code:`<span class="kw">if</span> (!<span class="fn">ft_can_print</span>(num, list))
+{
+    <span class="fn">write</span>(1, <span class="str">"Dict Error\n"</span>, 11);
+    <span class="fn">free_list</span>(list);
+    <span class="kw">return</span> (1);
+}
+<span class="fn">ft_print</span>(num, list, &first); <span class="cmt">// só chega aqui se ok</span>`
+  },
+  {
+    color:'var(--cyan)', file:'main.c', fn:'ft_print(char *n, t_list *list, int *first)',
+    title:'Impressão — Recursão principal',
+    desc:'Caso base: n=="0" → imprime "zero" se for o número inteiro (first==1). Caso recursivo: get_class_index → print_class. O flag *first é um ponteiro partilhado entre todas as chamadas recursivas para controlar o espaço entre palavras.',
+    code:`<span class="kw">if</span> (<span class="fn">bn_is_zero</span>(n)) {
+    <span class="kw">if</span> (*first == 1) <span class="fn">ft_putstr</span>(list[0].number_name);
+    <span class="kw">return</span>;
+}
+idx = <span class="fn">get_class_index</span>(n, list);
+<span class="fn">print_class</span>(n, list, first, idx);`
+  },
+  {
+    color:'var(--green)', file:'main.c', fn:'print_class(char *n, t_list *list, int *first, int idx)',
+    title:'print_class — Divide e imprime',
+    desc:'bn_div dá o quociente (quantas vezes a classe cabe). Se classe≥100, recursiona no quociente primeiro (ex: 300 → recursiona "3" antes de "hundred"). Imprime espaço se não for a primeira palavra. Imprime o nome da classe. bn_mod dá o resto e recursiona.',
+    code:`quot = <span class="fn">bn_div</span>(n, list[idx].nbr);
+<span class="kw">if</span> (<span class="fn">bn_cmp</span>(list[idx].nbr, <span class="str">"100"</span>) >= 0)
+    <span class="fn">ft_print</span>(quot, list, first); <span class="cmt">// multiplier</span>
+<span class="kw">if</span> (*first == 0) <span class="fn">write</span>(1, <span class="str">" "</span>, 1);
+<span class="fn">ft_putstr</span>(list[idx].number_name);
+rem = <span class="fn">bn_mod</span>(n, list[idx].nbr);
+<span class="kw">if</span> (!<span class="fn">bn_is_zero</span>(rem)) <span class="fn">ft_print</span>(rem, list, first);`
+  },
+  {
+    color:'var(--red)', file:'ft_bigint.c', fn:'bn_div + bn_mod',
+    title:'BigNum — String slicing',
+    desc:'Todos os divisores ≥100 são potências de 10. bn_div: k=strlen(divisor)-1, pega os primeiros (len-k) chars. bn_mod: pega os últimos k chars. Caso especial: num==divisor → retorna "0" (trata teens). Nunca usa aritmética — só manipulação de strings.',
+    code:`<span class="cmt">// bn_div("12345", "1000")</span>
+zeros = <span class="fn">strlen</span>(<span class="str">"1000"</span>) - 1; <span class="cmt">// = 3</span>
+rlen  = 5 - 3;           <span class="cmt">// = 2</span>
+<span class="kw">return</span> <span class="fn">ft_strdup</span>(<span class="str">"12"</span>); <span class="cmt">// primeiros 2 chars</span>
+
+<span class="cmt">// bn_mod("12345", "1000")</span>
+start = num + (5 - 3);   <span class="cmt">// aponta para "345"</span>
+<span class="kw">return</span> <span class="fn">ft_strdup</span>(<span class="str">"345"</span>);`
+  },
+];
+
+function buildTimeline() {
+  const depthColors = ['var(--yellow)','var(--green)','var(--cyan)','var(--purple)','var(--orange)','var(--red)','var(--cyan)','var(--red)'];
+  const container = document.getElementById('timeline-content');
+  container.innerHTML = TIMELINE_DATA.map((item, i) => `
+    <div class="tl-item" style="animation-delay:${i*0.07}s">
+      <div class="tl-dot" style="color:${item.color};border-color:${item.color}"></div>
+      <div class="tl-file" style="color:${item.color}">${item.file} — ${item.fn}</div>
+      <div class="tl-card" style="border-left:3px solid ${item.color}">
+        <h3 style="color:${item.color}">${item.title}</h3>
+        <div class="tl-desc">${item.desc}</div>
+        <div class="code-snippet">${item.code}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DICT SIMULATOR
+// ═══════════════════════════════════════════════════════════════
+function buildDict() {
+  const container = document.getElementById('dict-entries');
+  container.innerHTML = DICT.map((e, i) => `
+    <div class="dict-entry ${disabledEntries.has(i)?'disabled':''}" id="de-${i}">
+      <span class="nbr">${e[0]}</span>
+      <span class="name">${e[1]}</span>
+      <button class="dict-toggle" onclick="toggleDictEntry(${i})" title="${disabledEntries.has(i)?'Restaurar':'Remover'}">
+        ${disabledEntries.has(i)?'+':'×'}
+      </button>
+    </div>
+  `).join('');
+  runDictTest();
+}
+
+function toggleDictEntry(i) {
+  if (disabledEntries.has(i)) disabledEntries.delete(i);
+  else disabledEntries.add(i);
+  buildDict();
+}
+
+function resetDict() {
+  disabledEntries.clear();
+  buildDict();
+}
+
+function neededEntries(n, dict) {
+  const needed = [];
+  function rec(n) {
+    n = String(n);
+    if (bnIsZero(n)) return;
+    const idx = getClassIndex(n, dict);
+    if (idx < 0) { needed.push(n); return; }
+    const cls = dict[idx][0];
+    if (bnCmp(cls,'100')>=0) rec(bnDiv(n,cls));
+    const rem = bnMod(n,cls);
+    if (!bnIsZero(rem)) rec(rem);
+  }
+  rec(n);
+  return [...new Set(needed)];
+}
+
+function runDictTest() {
+  const raw = document.getElementById('dict-test-input').value.trim();
+  if (!raw || !/^\d+$/.test(raw)) return;
+  const num = raw.replace(/^0+/,'') || '0';
+  const dict = getActiveDict();
+
+  const outEl = document.getElementById('dict-output');
+  const chainEl = document.getElementById('dict-chain');
+
+  // show what entries are needed
+  const fullDict = DICT.map(e => [String(e[0]),e[1]]);
+  const missing = neededEntries(num, dict);
+
+  if (!canPrint(num, dict)) {
+    outEl.className = 'dict-output error';
+    outEl.textContent = 'Dict Error';
+    chainEl.innerHTML = missing.map(m =>
+      `<div class="missing-item">✗ Entrada "${m}" em falta</div>`
+    ).join('');
+  } else {
+    const { output } = convertToEnglish(num, dict);
+    outEl.className = 'dict-output ok';
+    outEl.textContent = output;
+    // show what entries were used
+    const used = [];
+    function findUsed(n) {
+      n = String(n);
+      if (bnIsZero(n)) return;
+      const idx = getClassIndex(n, dict);
+      if (idx < 0) return;
+      const cls = dict[idx][0];
+      used.push(cls + ': ' + dict[idx][1]);
+      if (bnCmp(cls,'100')>=0) findUsed(bnDiv(n,cls));
+      const rem = bnMod(n,cls);
+      if (!bnIsZero(rem)) findUsed(rem);
+    }
+    findUsed(num);
+    const unique = [...new Set(used)];
+    chainEl.innerHTML = unique.map(u =>
+      `<div style="font-size:10px;padding:4px 8px;border-radius:3px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.15);color:var(--green)">✓ ${u}</div>`
+    ).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  QUIZ
+// ═══════════════════════════════════════════════════════════════
+const QUIZ_DATA = [
+  {
+    q: 'O que retorna <code>bn_div("12345", "1000")</code>?',
+    opts: ['"12"', '"345"', '"12345"', '"0"'],
+    correct: 0,
+    explain: '<strong>"12"</strong> — k = strlen("1000")-1 = 3 zeros. rlen = 5-3 = 2. Pegamos os primeiros 2 chars: "12".'
+  },
+  {
+    q: 'O que retorna <code>bn_mod("12345", "1000")</code>?',
+    opts: ['"12"', '"345"', '"0"', '"12345"'],
+    correct: 1,
+    explain: '<strong>"345"</strong> — k = 3 zeros. start = num + (5-3) = aponta para os últimos 3 chars: "345".'
+  },
+  {
+    q: 'Por que usamos <code>char*</code> em vez de <code>long long</code> para o número?',
+    opts: ['É mais rápido', 'long long não suporta 37 dígitos (undecillion)', 'Por norma da 42', 'Para usar malloc'],
+    correct: 1,
+    explain: '<strong>long long</strong> suporta ~9.2 quintillion (19 dígitos). Undecillion tem 37 dígitos. Não cabe.'
+  },
+  {
+    q: 'O que acontece com a entrada <code>42: forty-two</code> no dict?',
+    opts: ['É usada directamente para o número 42', 'É ignorada — is_primitive retorna 0', 'Causa um erro', 'Substitui "forty" e "two"'],
+    correct: 1,
+    explain: '<strong>is_primitive</strong> verifica se a entrada é base (0-9, 10-19, tens, pot. de 10). "42" não passa → é ignorada. O programa decompõe sempre em primitivos.'
+  },
+  {
+    q: 'Para que serve o parâmetro <code>int *first</code> em ft_print?',
+    opts: ['Conta o número de palavras', 'Controla o espaço antes da primeira palavra', 'Guarda o índice actual no array', 'Indica se o número é zero'],
+    correct: 1,
+    explain: '<strong>*first = 1</strong>: não imprime espaço antes da 1ª palavra. Após a 1ª: *first=0 e todas as seguintes recebem espaço. É ponteiro porque ft_print é recursiva — todas as chamadas partilham o estado.'
+  },
+  {
+    q: 'O que faz <code>ft_can_print</code> antes de <code>ft_print</code>?',
+    opts: ['Imprime o número', 'Valida os argumentos do main', 'Verifica recursivamente se todas as entradas necessárias existem', 'Lê o ficheiro dict'],
+    correct: 2,
+    explain: '<strong>Dry-run</strong>: percorre o número inteiro sem imprimir nada. Se qualquer primitivo faltar, retorna 0 → imprime "Dict Error\\n" limpo, sem output parcial.'
+  },
+  {
+    q: '<code>get_class_index("19", list)</code> — que classe retorna?',
+    opts: ['"10" (ten)', '"19" (nineteen)', '"20" (twenty)', '"9" (nine)'],
+    correct: 1,
+    explain: '<strong>"19": nineteen</strong> — is_primitive("19") é true (teen: strlen==2 && nbr[0]=="1"). bn_cmp("19","19")==0 → exact=i. exact tem prioridade sobre best.'
+  },
+  {
+    q: '<code>bn_mod("19", "19")</code> retorna?',
+    opts: ['"9"', '"1"', '"0"', '"19"'],
+    correct: 2,
+    explain: '<strong>"0"</strong> — caso especial: if (bn_cmp(num, divisor) == 0) return ft_strdup("0"). x%x=0 sempre. Sem isto daria "9" (último char).'
+  },
+  {
+    q: 'O que é a sentinela <code>list[41].nbr = NULL</code>?',
+    opts: ['Um erro de memória', 'Marca o fim do array sem precisar de passar o tamanho', 'O valor para "zero"', 'Um número reservado'],
+    correct: 1,
+    explain: '<strong>Sentinela</strong>: valor especial que marca o fim. Funções percorrem while(list[i].nbr) e param sozinhas. Igual ao \\0 das strings C.'
+  },
+  {
+    q: 'Por que <code>buf[1]</code> e não <code>buf[2]</code>?',
+    opts: ['Para poupar memória', 'read(file, buf, 1) lê 1 byte — buf nunca é tratado como string, não precisa de \\0', 'Por norma da 42', 'buf[2] causaria overflow'],
+    correct: 1,
+    explain: '<strong>1 byte é suficiente</strong>: lemos sempre 1 char de cada vez. Nunca fazemos strlen(buf) nem tratamos como string. Logo null terminator seria desnecessário.'
+  },
+  {
+    q: 'Qual é o bug que <code>is_primitive</code> corrige em <code>get_class_index</code>?',
+    opts: ['Overflow de inteiro', 'Para n="5", encontrava "4" como best → bn_div devolvía "5" de volta → recursão infinita', 'Dict não era lido correctamente', 'Zeros à esquerda no output'],
+    correct: 1,
+    explain: '<strong>Recursão infinita</strong>: bn_div("5","4") com zeros=0 devolvia "5". ft_print("5") chamava-se a si própria → stack overflow silencioso. is_primitive garante que só classes seguras são usadas como divisores.'
+  },
+  {
+    q: 'Para que serve <code>valid_zero("007")</code>?',
+    opts: ['Valida que é zero', 'Remove zeros à esquerda → retorna "7"', 'Converte para int', 'Verifica se é número válido'],
+    correct: 1,
+    explain: '<strong>Remove leading zeros</strong>: avança o ponteiro enquanto *av==\'0\'. Para "007" devolve ponteiro para "7". Assim "007" é tratado como "7".'
+  },
+];
+
+let quizState = { current: 0, score: 0, answered: false };
+
+function initQuiz() {
+  quizState = { current: 0, score: 0, answered: false };
+  renderQuiz();
+}
+
+function renderQuiz() {
+  const prog = document.getElementById('quiz-progress');
+  prog.innerHTML = QUIZ_DATA.map((_, i) =>
+    `<div class="qp-dot ${i < quizState.current ? 'done' : i === quizState.current ? 'current' : ''}"></div>`
+  ).join('');
+
+  if (quizState.current >= QUIZ_DATA.length) {
+    const pct = Math.round(quizState.score / QUIZ_DATA.length * 100);
+    const color = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
+    document.getElementById('quiz-content').innerHTML = `
+      <div class="quiz-score">
+        <div class="score-num" style="color:${color}">${quizState.score}/${QUIZ_DATA.length}</div>
+        <div class="score-label">${pct}% — ${pct>=80?'Pronto para a defesa! 🎉':pct>=50?'Bom trabalho, mais um bocado':'Volta a estudar e tenta de novo'}</div>
+        <br><br>
+        <button class="btn btn-green" onclick="initQuiz()">TENTAR DE NOVO</button>
+      </div>`;
+    return;
+  }
+
+  const q = QUIZ_DATA[quizState.current];
+  document.getElementById('quiz-content').innerHTML = `
+    <div class="quiz-card">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">
+        Pergunta ${quizState.current + 1} de ${QUIZ_DATA.length}
+        <span style="margin-left:12px;color:var(--green)">${quizState.score} corretas</span>
+      </div>
+      <div class="quiz-q">${q.q}</div>
+      <div class="quiz-options" id="quiz-opts">
+        ${q.opts.map((o, i) => `<button class="quiz-opt" onclick="answerQuiz(${i})">${o}</button>`).join('')}
+      </div>
+      <div class="quiz-explain" id="quiz-explain">${q.explain}</div>
+    </div>
+    <button class="btn btn-cyan" id="quiz-next" style="display:none" onclick="nextQuiz()">PRÓXIMA →</button>
+  `;
+}
+
+function answerQuiz(i) {
+  if (quizState.answered) return;
+  quizState.answered = true;
+  const q = QUIZ_DATA[quizState.current];
+  const opts = document.querySelectorAll('.quiz-opt');
+  opts.forEach((o, idx) => {
+    o.disabled = true;
+    if (idx === q.correct) o.classList.add('correct');
+    else if (idx === i && i !== q.correct) o.classList.add('wrong');
+  });
+  if (i === q.correct) quizState.score++;
+  document.getElementById('quiz-explain').classList.add('show');
+  document.getElementById('quiz-next').style.display = 'inline-block';
+}
+
+function nextQuiz() {
+  quizState.current++;
+  quizState.answered = false;
+  renderQuiz();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FLASH CARDS
+// ═══════════════════════════════════════════════════════════════
+const FLASH_DATA = [
+  {q:'O que faz bn_div("12345","1000")?', a:'Retorna "12" — k=3 zeros, pega os primeiros (5-3)=2 chars'},
+  {q:'O que faz bn_mod("12345","1000")?', a:'Retorna "345" — k=3 zeros, pega os últimos 3 chars'},
+  {q:'Por que char* em vez de long long?', a:'long long max = 19 dígitos. Undecillion = 37 dígitos. Não cabe.'},
+  {q:'O que é is_primitive?', a:'Verifica se a entrada é base: dígitos 0-9, teens 10-19, tens 20-90, pot. de 10 ≥100. Entradas compostas (42) são ignoradas.'},
+  {q:'Para que serve *first em ft_print?', a:'Flag partilhado: 1=sem espaço antes da 1ª palavra. 0=imprime espaço antes. É int* para partilhar entre chamadas recursivas.'},
+  {q:'O que é a sentinela list[41].nbr = NULL?', a:'Marca o fim do array. Funções param quando nbr==NULL. Como o \\0 das strings C.'},
+  {q:'O que é ft_can_print?', a:'Dry-run: verifica recursivamente se todas as entradas necessárias existem. Sem output. Garante "Dict Error\\n" limpo.'},
+  {q:'O bug original de get_class_index?', a:'Para n="5" encontrava "4". bn_div("5","4") zeros=0 → devolvia "5" → ft_print("5") chamava-se a si → recursão infinita.'},
+  {q:'Por que buf[1] e não buf[2]?', a:'Lemos 1 byte de cada vez. Nunca tratamos buf como string. Não precisa de null terminator.'},
+  {q:'O que retorna bn_mod("19","19")?', a:'"0" — caso especial: num==divisor → retorna "0". x%x=0 sempre.'},
+  {q:'Quais funções são permitidas no rush02?', a:'write, malloc, free, open, read, close. Nada da libc.'},
+  {q:'get_class_index para n="45" sem exact match?', a:'Retorna o índice de "40" (forty) — maior is_tens que cabe em "45".'},
+  {q:'O que acontece com linhas vazias no dict?', a:'get_nbr salta todos os \\n iniciais antes de ler dígitos. Linhas vazias são ignoradas automaticamente.'},
+  {q:'Trace: ft_print("345")?', a:'"345"→classe "100"→quot"3"→"three" hundred→rem"45"→"40"(forty)→rem"5"→"five" = "three hundred forty five"'},
+  {q:'Por que write(2,...) para erros de argumento?', a:'fd 2 = stderr. Erros de input vão para stderr. Output normal para stdout (fd 1). Permite redireccionar separadamente.'},
+];
+
+let flashIdx = 0;
+let flashFlipped = false;
+
+function initFlash() { showFlash(0); }
+
+function showFlash(i) {
+  flashIdx = i;
+  flashFlipped = false;
+  const card = document.getElementById('flashcard');
+  card.classList.remove('flipped');
+  document.getElementById('flash-q').textContent = FLASH_DATA[i].q;
+  document.getElementById('flash-a').textContent = FLASH_DATA[i].a;
+  document.getElementById('flash-counter').textContent = `${i+1} / ${FLASH_DATA.length}`;
+}
+
+function flipCard() {
+  flashFlipped = !flashFlipped;
+  document.getElementById('flashcard').classList.toggle('flipped', flashFlipped);
+}
+
+function nextCard() { showFlash((flashIdx + 1) % FLASH_DATA.length); }
+function prevCard() { showFlash((flashIdx - 1 + FLASH_DATA.length) % FLASH_DATA.length); }
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+calcBn();
+updateSlice();
+</script>
+</body>
+</html>
